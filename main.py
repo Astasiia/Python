@@ -5,13 +5,15 @@ from tkinter import filedialog
 from tkinter.ttk import Combobox
 from PIL import Image, ImageTk
 
+# константы для кортежа свойств объектов определенного типа
 COLOR = 0
 FORM = 1
 POINT = 2
 
-select_object = None
-select_comb = []
 
+# перчислимые типы для обозначения типов объектов
+# формы объектов
+# состояние работы - для объединения объектов
 TypeObject = Enum('TypeObject', 'table, chair, bench,'
                                 'summerhouse, bathhouse, house,'
                                 'tiles, asphalt, grass,'
@@ -20,14 +22,22 @@ Color = Enum('Color', 'red, green, blue, yellow')
 Form = Enum('Form', 'polygon, oval')
 Select = Enum('Select', 'one, no_one')
 
+
+# глобальные переменные для их выделения на холсте
+select_object = None
+select_comb = []
 select_flag = Select.one
 
+
 # Списки возможных объектов по типу объекта
+# Для выбора пользователем
 list_furniture = ["стол", "стул", "лавочка"]
 list_build = ["беседка", "баня", "дом"]
 list_coverage = ["плитка", "асфальт", "трава"]
 list_plant = ["цветок", "куст", "дерево"]
 
+
+# словарь соответсвия выбора объекта и его типа
 dict_object = {"стол": TypeObject.table,
                "стул": TypeObject.chair,
                "лавочка": TypeObject.bench,
@@ -41,6 +51,8 @@ dict_object = {"стол": TypeObject.table,
                "куст": TypeObject.bush,
                "дерево": TypeObject.tree}
 
+
+# словарь свойств объектов различного типа
 about_object = {TypeObject.table: ("sienna4", Form.polygon,
                                    [(0, 0), (0, 10), (10, 10), (10, 0)]),
                 TypeObject.chair: ("sienna4", Form.oval,
@@ -54,242 +66,20 @@ about_object = {TypeObject.table: ("sienna4", Form.polygon,
                 TypeObject.house: ("black", Form.polygon,
                                    [(0, 0), (0, 100), (100, 100), (100, 0)]),
                 TypeObject.tiles: ("gray80", Form.polygon,
-                                   [(0, 0), (0, 5), (5, 5), (5, 0)]),
+                                   [(0, 0), (0, 10), (10, 10), (10, 0)]),
                 TypeObject.asphalt: ("gray20", Form.polygon,
-                                     [(0, 0), (0, 5), (5, 5), (5, 0)]),
+                                     [(0, 0), (0, 10), (10, 10), (10, 0)]),
                 TypeObject.grass: ("green", Form.polygon,
-                                   [(0, 0), (0, 5), (5, 5), (5, 0)]),
+                                   [(0, 0), (0, 10), (10, 10), (10, 0)]),
                 TypeObject.flower: ("maroon1", Form.oval,
-                                    [(0, 0), (3, 3)]),
+                                    [(0, 0), (5, 5)]),
                 TypeObject.bush: ("darkgreen", Form.oval,
-                                  [(0, 0), (7, 7)]),
+                                  [(0, 0), (9, 9)]),
                 TypeObject.tree: ("forestgreen", Form.oval,
                                   [(0, 0), (15, 15)])}
 
 
-# dict_object = {"стол": (TypeObject.table, Form.polygon, "brown"),
-#                "стул": (TypeObject.chair, Form.oval, "brown"),
-#                "лавочка": (TypeObject.bench, Form.polygon, "yellow"),
-#                "беседка": (TypeObject.summerhouse, Form.oval, "black"),
-#                "баня": (TypeObject.bathhouse, Form.polygon, "black"),
-#                "дом": (TypeObject.house, Form.polygon, "black"),
-#                "плитка": (TypeObject.tiles, Form.polygon, "gray"),
-#                "асфальт": (TypeObject.asphalt, Form.polygon, "black"),
-#                "трава": (TypeObject.grass, Form.polygon, "green"),
-#                "цветок": (TypeObject.flower, Form.polygon, "red"),
-#                "куст": (TypeObject.bush, Form.polygon, "green"),
-#                "дерево": (TypeObject.tree, Form.polygon, "green")}
-
-
-def combining(canvas):
-    global select_flag, select_object, select_comb
-    if select_flag == Select.one:
-        select_flag = Select.no_one
-        if select_object is not None:
-            x = canvas.all_obj.get(select_object)
-            if x == "e":
-                select_comb.append(select_object)
-            else:
-                for i in canvas.list_combining:
-                    if select_object in i.list_tag:
-                        break
-                select_comb.extend(i.list_tag)
-    else:
-        for i in range(0, len(select_comb)):
-            color = canvas.itemcget(select_comb[i], "fill")
-            canvas.itemconfig(select_comb[i], outline=color)
-        canvas.combining_obj(select_comb)
-        select_comb.clear()
-        select_object = None
-        select_flag = Select.one
-
-
-def separation(canvas):
-    global select_object
-    if select_object is None:
-        return
-    x = canvas.all_obj.get(select_object)
-    if x == "e":
-        color = canvas.itemcget(select_object, "fill")
-        canvas.itemconfig(select_object, outline=color)
-    else:
-        canvas.item_config_all(select_object, None)
-        canvas.separation_obj(select_object)
-    select_object = None
-
-
-def load_image(name):
-    image = Image.open(name)
-    image = image.resize((35, 35))
-    return image
-
-
-def add_elem(obj, canvas):
-    global select_comb, select_object
-    x = select_comb.count(obj)
-    if x:
-        x = select_comb.index(obj)
-        select_comb.pop(x)
-        color = canvas.itemcget(obj, "fill")
-        canvas.itemconfig(obj, outline=color)
-        select_object = None
-        return
-    else:
-        select_comb.append(obj)
-
-
-def set_select(obj, canvas):
-    global select_object
-    if select_flag == Select.one:
-        if select_object is not None:
-            x = canvas.all_obj.get(select_object)
-            if x == "e":
-                color = canvas.itemcget(select_object, "fill")
-                canvas.itemconfig(select_object, outline=color)
-            else:
-                canvas.item_config_all(select_object, None)
-        if obj is select_object:
-            select_object = None
-            return
-        select_object = obj
-    else:
-        x = canvas.all_obj.get(obj)
-        if x == "e":
-            add_elem(obj, canvas)
-        else:
-            for i in canvas.list_combining:
-                if obj in i.list_tag:
-                    break
-            for j in i.list_tag:
-                add_elem(j, canvas)
-    x = canvas.all_obj.get(obj)
-    if x == "e":
-        canvas.itemconfig(obj, outline="green2")
-    else:
-        canvas.item_config_all(obj, "green2")
-
-
-def point_for_canvas(lst, canvas):
-    result = []
-    deltax = canvas.get_x()
-    deltay = canvas.get_y()
-    for i in lst:
-        result.append((i[0]+deltax, i[1]+deltay))
-    return result
-
-
-def new_object(obj, canvas, window):
-    type_obj = dict_object.get(obj.get())
-    lst = about_object.get(type_obj)
-    point = point_for_canvas(lst[POINT], canvas)
-    if lst[FORM] is Form.oval:
-        a = canvas.create_oval(point, fill=lst[COLOR], outline=lst[COLOR],
-                               activeoutline="cyan", width=5)
-    else:
-        a = canvas.create_polygon(point, fill=lst[COLOR], outline=lst[COLOR],
-                                  activeoutline="cyan", width=5)
-    canvas.tag_bind(a, '<Button-1>', lambda event: set_select(a, canvas))
-    canvas.add_elementary(type_obj, a)
-    window.destroy()
-
-
-def new_window(list_obj, canvas):
-    window = Toplevel()
-    window.title("Новый объект")
-    window.geometry('300x300')
-    lbl_obj = Label(window,
-                    text="Выберете объект",
-                    font=("Times New Roman", 18))
-    lbl_obj.place(x=20, y=20)
-    obj = Combobox(window)
-    obj['values'] = list_obj
-    obj.current(0)
-    obj.place(x=20, y=50, width=260)
-    btn_yes = Button(window,
-                     text="Добавить",
-                     font=("Times New Roman", 18),
-                     command=lambda: new_object(obj, canvas, window))
-    btn_no = Button(window,
-                    text="Отмена",
-                    font=("Times New Roman", 18),
-                    command=window.destroy)
-    btn_yes.place(x=20, y=280, width=120, height=50, anchor="sw")
-    btn_no.place(x=280, y=280, width=120, height=50, anchor="se")
-
-
-def msg_exit(window):
-    ans = askyesno("Выход", "Перед выходом сохраните файл!\n Вы действительноо хотите выйти?")
-    if ans:
-        window.destroy()
-
-
-def msg_save(canvas):
-    filetypes = [("TXT", "*.txt")]
-    new_file = filedialog.asksaveasfilename(filetypes=filetypes)
-    if new_file:
-        f = open(new_file, 'w')
-        # canvas.save_config(f)
-        f.close()
-
-
-def msg_load(canvas):
-    filetypes = [("TXT", "*.txt")]
-    file = filedialog.askopenfilename(filetypes=filetypes)
-    if file:
-        f = open(file, 'r')
-        canvas.download(f)
-        f.close
-
-
-def move_one(r, canvas, obj):
-    if r == "l":
-        canvas.move(obj, -5, 0)
-    elif r == "r":
-        canvas.move(obj, 5, 0)
-    elif r == "u":
-        canvas.move(obj, 0, -5)
-    elif r == "d":
-        canvas.move(obj, 0, 5)
-
-
-def move_all(r, canvas):
-    global select_object
-    for i in canvas.list_combining:
-        if select_object in i.list_tag:
-            break
-    for j in i.list_tag:
-        move_one(r, canvas, j)
-
-
-def move_obj(r, canvas):
-    global select_object
-    if select_object is None:
-        return
-    x = canvas.all_obj.get(select_object)
-    if x == "e":
-        move_one(r, canvas, select_object)
-    else:
-        move_all(r, canvas)
-
-
-def create_garden(canvas, in_x, in_y, in_coverage):
-    x = 10 * int(in_x.get())
-    y = 10 * int(in_y.get())
-    x0 = 300 - int(x / 2)
-    y0 = 200 - int(y / 2)
-    canvas.set_x(x0)
-    canvas.set_y(y0)
-    coverage = dict_object.get(in_coverage.get())
-    color = about_object.get(coverage)[COLOR]
-    canvas.delete(canvas.garden)
-    canvas.garden = canvas.create_polygon((x0, y0), (x0 + x, y0), (x0 + x, y0 + y), (x0, y0 + y),
-                                          outline="black", fill=color)
-    canvas.tag_lower(canvas.garden)
-    canvas.set_vertical(y)
-    canvas.set_horizontal(x)
-    canvas.change_coverage(coverage)
-
-
+# функции для создания виджетов для их расположения на основном окне
 def create_btn_move(window):
     work_move_obj = Frame(window, width=320, height=160, bg="lightgray")
     work_move_obj.place(x=290, y=430)
@@ -448,7 +238,230 @@ def create_btn_add(window):
     btn_coverage.place(x=20, y=90, width=120, height=50)
     btn_build.place(x=150, y=20, width=120, height=50)
     btn_furniture.place(x=150, y=90, width=120, height=50)
-    # btn_furniture['command'] = lambda: canvas.add_elementary(TypeObject.table)
+
+
+#  функция для создания нового окна для выбора добавляемого объекта
+def new_window(list_obj, canvas):
+    window = Toplevel()
+    window.title("Новый объект")
+    window.geometry('300x300')
+    lbl_obj = Label(window,
+                    text="Выберете объект",
+                    font=("Times New Roman", 18))
+    lbl_obj.place(x=20, y=20)
+    obj = Combobox(window)
+    obj['values'] = list_obj
+    obj.current(0)
+    obj.place(x=20, y=50, width=260)
+    btn_yes = Button(window,
+                     text="Добавить",
+                     font=("Times New Roman", 18),
+                     command=lambda: new_object(obj, canvas, window))
+    btn_no = Button(window,
+                    text="Отмена",
+                    font=("Times New Roman", 18),
+                    command=window.destroy)
+    btn_yes.place(x=20, y=280, width=120, height=50, anchor="sw")
+    btn_no.place(x=280, y=280, width=120, height=50, anchor="se")
+
+
+# функция для создания образа объекта на холсте
+# строится по выбору, полученному от пользователя
+def new_object(obj, canvas, window):
+    type_obj = dict_object.get(obj.get())
+    lst = about_object.get(type_obj)
+    point = point_for_canvas(lst[POINT], canvas)
+    if lst[FORM] is Form.oval:
+        a = canvas.create_oval(point, fill=lst[COLOR], outline=lst[COLOR],
+                               activeoutline="cyan", width=5)
+    else:
+        a = canvas.create_polygon(point, fill=lst[COLOR], outline=lst[COLOR],
+                                  activeoutline="cyan", width=5)
+    canvas.tag_bind(a, '<Button-1>', lambda event: set_select(a, canvas))
+    canvas.add_elementary(type_obj, a)
+    window.destroy()
+
+
+# рассчет точек для расположения объекта
+def point_for_canvas(lst, canvas):
+    result = []
+    deltax = canvas.get_x()
+    deltay = canvas.get_y()
+    for i in lst:
+        result.append((i[0]+deltax, i[1]+deltay))
+    return result
+
+
+# функции для всплывающих окон (закрытие, сохранение, загрузка файла)
+def msg_exit(window):
+    ans = askyesno("Выход", "Перед выходом сохраните файл!\n Вы действительноо хотите выйти?")
+    if ans:
+        window.destroy()
+
+
+def msg_save(canvas):
+    filetypes = [("TXT", "*.txt")]
+    new_file = filedialog.asksaveasfilename(filetypes=filetypes)
+    if new_file:
+        f = open(new_file, 'w')
+        # canvas.save_config(f)
+        f.close()
+
+
+def msg_load(canvas):
+    filetypes = [("TXT", "*.txt")]
+    file = filedialog.askopenfilename(filetypes=filetypes)
+    if file:
+        f = open(file, 'r')
+        canvas.download(f)
+        f.close
+
+
+# загрузка изображений для кнопок
+def load_image(name):
+    image = Image.open(name)
+    image = image.resize((35, 35))
+    return image
+
+
+# функции для изменения положения объектов на холсте
+def move_one(r, canvas, obj):
+    if r == "l":
+        canvas.move(obj, -5, 0)
+    elif r == "r":
+        canvas.move(obj, 5, 0)
+    elif r == "u":
+        canvas.move(obj, 0, -5)
+    elif r == "d":
+        canvas.move(obj, 0, 5)
+
+
+def move_all(r, canvas):
+    global select_object
+    for i in canvas.list_combining:
+        if select_object in i.list_tag:
+            break
+    for j in i.list_tag:
+        move_one(r, canvas, j)
+
+
+def move_obj(r, canvas):
+    global select_object
+    if select_object is None:
+        return
+    x = canvas.all_obj.get(select_object)
+    if x == "e":
+        move_one(r, canvas, select_object)
+    else:
+        move_all(r, canvas)
+
+
+# отображение участка на холсте
+# внесение данных в объект класса WorkingField
+def create_garden(canvas, in_x, in_y, in_coverage):
+    x = 10 * int(in_x.get())
+    y = 10 * int(in_y.get())
+    x0 = 300 - int(x / 2)
+    y0 = 200 - int(y / 2)
+    canvas.set_x(x0)
+    canvas.set_y(y0)
+    coverage = dict_object.get(in_coverage.get())
+    color = about_object.get(coverage)[COLOR]
+    canvas.delete(canvas.garden)
+    canvas.garden = canvas.create_polygon((x0, y0), (x0 + x, y0), (x0 + x, y0 + y), (x0, y0 + y),
+                                          outline="black", fill=color)
+    canvas.tag_lower(canvas.garden)
+    canvas.set_vertical(y)
+    canvas.set_horizontal(x)
+    canvas.change_coverage(coverage)
+
+
+# функция для объединения объектов на холсте
+# изменения поведения системы, когда выбираются объекты для объединения
+def combining(canvas):
+    global select_flag, select_object, select_comb
+    if select_flag == Select.one:
+        select_flag = Select.no_one
+        if select_object is not None:
+            x = canvas.all_obj.get(select_object)
+            if x == "e":
+                select_comb.append(select_object)
+            else:
+                for i in canvas.list_combining:
+                    if select_object in i.list_tag:
+                        break
+                select_comb.extend(i.list_tag)
+    else:
+        for i in range(0, len(select_comb)):
+            color = canvas.itemcget(select_comb[i], "fill")
+            canvas.itemconfig(select_comb[i], outline=color)
+        canvas.combining_obj(select_comb)
+        select_comb.clear()
+        select_object = None
+        select_flag = Select.one
+
+
+# функция для разъединения объектов на холсте
+# для работы с холстом
+def separation(canvas):
+    global select_object
+    if select_object is None:
+        return
+    x = canvas.all_obj.get(select_object)
+    if x == "e":
+        color = canvas.itemcget(select_object, "fill")
+        canvas.itemconfig(select_object, outline=color)
+    else:
+        canvas.item_config_all(select_object, None)
+        canvas.separation_obj(select_object)
+    select_object = None
+
+
+def add_elem(obj, canvas):
+    global select_comb, select_object
+    x = select_comb.count(obj)
+    if x:
+        x = select_comb.index(obj)
+        select_comb.pop(x)
+        color = canvas.itemcget(obj, "fill")
+        canvas.itemconfig(obj, outline=color)
+        select_object = None
+        return
+    else:
+        select_comb.append(obj)
+
+
+# функция выделения объекта при нажатии на него
+# смена выделенного объекта
+def set_select(obj, canvas):
+    global select_object
+    if select_flag == Select.one:
+        if select_object is not None:
+            x = canvas.all_obj.get(select_object)
+            if x == "e":
+                color = canvas.itemcget(select_object, "fill")
+                canvas.itemconfig(select_object, outline=color)
+            else:
+                canvas.item_config_all(select_object, None)
+        if obj is select_object:
+            select_object = None
+            return
+        select_object = obj
+    else:
+        x = canvas.all_obj.get(obj)
+        if x == "e":
+            add_elem(obj, canvas)
+        else:
+            for i in canvas.list_combining:
+                if obj in i.list_tag:
+                    break
+            for j in i.list_tag:
+                add_elem(j, canvas)
+    x = canvas.all_obj.get(obj)
+    if x == "e":
+        canvas.itemconfig(obj, outline="green2")
+    else:
+        canvas.item_config_all(obj, "green2")
 
 
 class UserWindow(Tk):
@@ -468,6 +481,7 @@ class UserWindow(Tk):
 
     def start(self):
         self.create_button()
+        # разобраться с функцией, не работает при вызове функции вместо кода
         work_move_obj = Frame(self, width=320, height=160, bg="lightgray")
         work_move_obj.place(x=290, y=430)
         imageR = Image.open("right.png")
@@ -628,7 +642,7 @@ class WorkingField(Canvas):
         pass
 
     def save_config(self, file):
-        file.write("AAA\n")
+        file.write("CANVAS\n")
 
     def download(self, file):
         pass
@@ -684,7 +698,6 @@ class ElementaryObject():
     def __init__(self, type_obj, tag):
         self.type = type_obj
         self.tag = tag
-        # canvas.create_polygon
         print("Elementary")
 
     def get_size(self):
