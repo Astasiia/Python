@@ -5,17 +5,13 @@ from tkinter import filedialog
 from tkinter.ttk import Combobox
 from PIL import Image, ImageTk
 
-
-FORM = 0
-COLOR = 1
-
+COLOR = 0
+FORM = 1
+POINT = 2
 
 select_object = None
 select_comb = []
-number = 0
 
-
-# Coverage = Enum('Coverage', 'grass, asphalt, tiles')
 TypeObject = Enum('TypeObject', 'table, chair, bench,'
                                 'summerhouse, bathhouse, house,'
                                 'tiles, asphalt, grass,'
@@ -32,7 +28,6 @@ list_build = ["беседка", "баня", "дом"]
 list_coverage = ["плитка", "асфальт", "трава"]
 list_plant = ["цветок", "куст", "дерево"]
 
-
 dict_object = {"стол": TypeObject.table,
                "стул": TypeObject.chair,
                "лавочка": TypeObject.bench,
@@ -45,6 +40,31 @@ dict_object = {"стол": TypeObject.table,
                "цветок": TypeObject.flower,
                "куст": TypeObject.bush,
                "дерево": TypeObject.tree}
+
+about_object = {TypeObject.table: ("sienna4", Form.polygon,
+                                   [(0, 0), (0, 10), (10, 10), (10, 0)]),
+                TypeObject.chair: ("sienna4", Form.oval,
+                                   [(0, 0), (5, 5)]),
+                TypeObject.bench: ("sienna4", Form.polygon,
+                                   [(0, 0), (0, 20), (5, 20), (5, 0)]),
+                TypeObject.summerhouse: ("red4", Form.oval,
+                                         [(0, 0), (40, 40)]),
+                TypeObject.bathhouse: ("blue4", Form.polygon,
+                                       [(0, 0), (0, 50), (50, 50), (50, 0)]),
+                TypeObject.house: ("black", Form.polygon,
+                                   [(0, 0), (0, 100), (100, 100), (100, 0)]),
+                TypeObject.tiles: ("gray80", Form.polygon,
+                                   [(0, 0), (0, 5), (5, 5), (5, 0)]),
+                TypeObject.asphalt: ("gray20", Form.polygon,
+                                     [(0, 0), (0, 5), (5, 5), (5, 0)]),
+                TypeObject.grass: ("green", Form.polygon,
+                                   [(0, 0), (0, 5), (5, 5), (5, 0)]),
+                TypeObject.flower: ("maroon1", Form.oval,
+                                    [(0, 0), (3, 3)]),
+                TypeObject.bush: ("darkgreen", Form.oval,
+                                  [(0, 0), (7, 7)]),
+                TypeObject.tree: ("forestgreen", Form.oval,
+                                  [(0, 0), (15, 15)])}
 
 
 # dict_object = {"стол": (TypeObject.table, Form.polygon, "brown"),
@@ -66,13 +86,21 @@ def combining(canvas):
     if select_flag == Select.one:
         select_flag = Select.no_one
         if select_object is not None:
-            select_comb.append(select_object)
+            x = canvas.all_obj.get(select_object)
+            if x == "e":
+                select_comb.append(select_object)
+            else:
+                for i in canvas.list_combining:
+                    if select_object in i.list_tag:
+                        break
+                select_comb.extend(i.list_tag)
     else:
         for i in range(0, len(select_comb)):
             color = canvas.itemcget(select_comb[i], "fill")
             canvas.itemconfig(select_comb[i], outline=color)
         canvas.combining_obj(select_comb)
         select_comb.clear()
+        select_object = None
         select_flag = Select.one
 
 
@@ -82,16 +110,32 @@ def separation(canvas):
         return
     x = canvas.all_obj.get(select_object)
     if x == "e":
-        return
+        color = canvas.itemcget(select_object, "fill")
+        canvas.itemconfig(select_object, outline=color)
     else:
         canvas.item_config_all(select_object, None)
         canvas.separation_obj(select_object)
+    select_object = None
 
 
 def load_image(name):
     image = Image.open(name)
     image = image.resize((35, 35))
     return image
+
+
+def add_elem(obj, canvas):
+    global select_comb, select_object
+    x = select_comb.count(obj)
+    if x:
+        x = select_comb.index(obj)
+        select_comb.pop(x)
+        color = canvas.itemcget(obj, "fill")
+        canvas.itemconfig(obj, outline=color)
+        select_object = None
+        return
+    else:
+        select_comb.append(obj)
 
 
 def set_select(obj, canvas):
@@ -109,16 +153,15 @@ def set_select(obj, canvas):
             return
         select_object = obj
     else:
-        x = select_comb.count(obj)
-        if x:
-            x = select_comb.index(obj)
-            select_comb.pop(x)
-            color = canvas.itemcget(obj, "fill")
-            canvas.itemconfig(obj, outline=color)
-            select_object = None
-            return
+        x = canvas.all_obj.get(obj)
+        if x == "e":
+            add_elem(obj, canvas)
         else:
-            select_comb.append(obj)
+            for i in canvas.list_combining:
+                if obj in i.list_tag:
+                    break
+            for j in i.list_tag:
+                add_elem(j, canvas)
     x = canvas.all_obj.get(obj)
     if x == "e":
         canvas.itemconfig(obj, outline="green2")
@@ -126,9 +169,25 @@ def set_select(obj, canvas):
         canvas.item_config_all(obj, "green2")
 
 
+def point_for_canvas(lst, canvas):
+    result = []
+    deltax = canvas.get_x()
+    deltay = canvas.get_y()
+    for i in lst:
+        result.append((i[0]+deltax, i[1]+deltay))
+    return result
+
+
 def new_object(obj, canvas, window):
     type_obj = dict_object.get(obj.get())
-    a = canvas.create_oval(0, 0, 30, 30, fill="red", outline="red", activeoutline="cyan", width=5)
+    lst = about_object.get(type_obj)
+    point = point_for_canvas(lst[POINT], canvas)
+    if lst[FORM] is Form.oval:
+        a = canvas.create_oval(point, fill=lst[COLOR], outline=lst[COLOR],
+                               activeoutline="cyan", width=5)
+    else:
+        a = canvas.create_polygon(point, fill=lst[COLOR], outline=lst[COLOR],
+                                  activeoutline="cyan", width=5)
     canvas.tag_bind(a, '<Button-1>', lambda event: set_select(a, canvas))
     canvas.add_elementary(type_obj, a)
     window.destroy()
@@ -182,10 +241,6 @@ def msg_load(canvas):
         f.close
 
 
-def aaa(canv, a, x, y):
-    canv.move(a, x, y)
-
-
 def move_one(r, canvas, obj):
     if r == "l":
         canvas.move(obj, -5, 0)
@@ -218,17 +273,20 @@ def move_obj(r, canvas):
 
 
 def create_garden(canvas, in_x, in_y, in_coverage):
-    x = 10*int(in_x.get())
-    y = 10*int(in_y.get())
-    x0 = 300 - int(x/2)
-    y0 = 200 - int(y/2)
+    x = 10 * int(in_x.get())
+    y = 10 * int(in_y.get())
+    x0 = 300 - int(x / 2)
+    y0 = 200 - int(y / 2)
+    canvas.set_x(x0)
+    canvas.set_y(y0)
+    coverage = dict_object.get(in_coverage.get())
+    color = about_object.get(coverage)[COLOR]
     canvas.delete(canvas.garden)
-    canvas.garden = canvas.create_polygon((x0, y0), (x0+x, y0), (x0+x, y0+y), (x0, y0+y),
-                                          outline="black", fill="green")
+    canvas.garden = canvas.create_polygon((x0, y0), (x0 + x, y0), (x0 + x, y0 + y), (x0, y0 + y),
+                                          outline="black", fill=color)
     canvas.tag_lower(canvas.garden)
     canvas.set_vertical(y)
     canvas.set_horizontal(x)
-    coverage = dict_object.get(in_coverage.get())
     canvas.change_coverage(coverage)
 
 
@@ -464,6 +522,20 @@ class WorkingField(Canvas):
         self.vertical_len = 0
         self.horizontal_len = 0
         self.coverage = None
+        self.x = 0
+        self.y = 0
+
+    def get_x(self):
+        return self.x
+
+    def get_y(self):
+        return self.y
+
+    def set_x(self, x):
+        self.x = x
+
+    def set_y(self, y):
+        self.y = y
 
     def get_vertical(self):
         return self.vertical_len
@@ -489,6 +561,8 @@ class WorkingField(Canvas):
             self.all_obj.update({i.tag: "c"})
 
     def del_obj(self, obj):
+        global select_object
+        select_object = None
         x = self.all_obj.get(obj)
         if x == "e":
             self.delete(obj)
@@ -505,7 +579,9 @@ class WorkingField(Canvas):
             self.list_combining.remove(i)
 
     def clear(self):
+        global select_object
         self.delete(ALL)
+        select_object = None
         self.list_elementary.clear()
         self.list_combining.clear()
 
@@ -515,13 +591,28 @@ class WorkingField(Canvas):
     def check_intersection(self):
         pass
 
+    def separ_and_comb(self, item, comb):
+        while comb:
+            x = comb.pop()
+            for i in self.list_combining:
+                if x in i.list_tag:
+                    self.list_combining.remove(i)
+                    break
+            for j in i.list_tag:
+                if j != x:
+                    comb.remove(j)
+            for j in i.items:
+                item.append(j)
+
     def combining_obj(self, list_comb):
         list_item = []
         for i in self.list_elementary:
             if i.tag in list_comb:
                 list_item.append(i)
+                list_comb.remove(i.tag)
         for i in list_item:
             self.list_elementary.remove(i)
+        self.separ_and_comb(list_item, list_comb)
         self.add_compound(list_item)
 
     def separation_obj(self, obj):
@@ -532,7 +623,6 @@ class WorkingField(Canvas):
         self.list_elementary.extend(i.items)
         for j in i.items:
             self.all_obj.update({j.tag: "e"})
-
 
     def distance(self):
         pass
@@ -546,9 +636,6 @@ class WorkingField(Canvas):
     def save_image(self):
         pass
 
-    def close(self):
-        pass
-
     def item_config_all(self, obj, color):
         for i in self.list_combining:
             if obj in i.list_tag:
@@ -560,7 +647,6 @@ class WorkingField(Canvas):
         else:
             for j in i.list_tag:
                 self.itemconfig(j, outline=color)
-
 
 
 class GraphicObject:
@@ -589,13 +675,6 @@ class CompoundObject():
         self.list_tag = []
         for i in list_item:
             self.list_tag.append(i.tag)
-        print("Compound")
-
-    def add_item(self, coordinate):
-        pass
-
-    def del_item(self):
-        pass
 
     def get_size(self):
         pass
