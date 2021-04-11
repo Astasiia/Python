@@ -102,6 +102,9 @@ class UserWindow(Tk):
             self.canvas.download(f)
             f.close()
 
+    def instruction(self):
+        showinfo("Инструкция")
+
 
 class WorkingField(Canvas):
     def __init__(self, window):
@@ -633,6 +636,8 @@ class WorkingField(Canvas):
                 point = eval(file.readline())
                 obj = self.create_load_elementary(type_obj, point)
                 list_items.append(obj)
+            elif flag is None:
+                return
         self.check_intersection_obj()
         self.check_object_on_garden()
         self.error_position()
