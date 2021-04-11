@@ -266,6 +266,7 @@ class WorkingField(Canvas):
             self.delete(self.line)
             self.distance_obj = [None, None]
             self.select_flag == Select.one
+            self.delete_select()
             return
         if self.select_flag is Select.no_one:
             # если процесс объединения
@@ -302,6 +303,7 @@ class WorkingField(Canvas):
             self.delete(self.line)
             self.distance_obj = [None, None]
             self.select_flag == Select.one
+            self.delete_select()
             return
         if self.select_flag is Select.no_one:
             # в процессе объединения снимаем выделения, ничего не делаем
@@ -345,6 +347,7 @@ class WorkingField(Canvas):
             self.delete(self.line)
             self.distance_obj = [None, None]
             self.select_flag == Select.one
+            self.delete_select()
             return
         if self.select_flag is Select.no_one:
             # в процессе объединения снимаем выделения, ничего не делаем
@@ -371,6 +374,7 @@ class WorkingField(Canvas):
             self.delete(self.line)
             self.distance_obj = [None, None]
             self.select_flag == Select.one
+            self.delete_select()
             return
         if self.select_flag is Select.no_one:
             # в процессе объединения снимаем выделения, ничего не делаем
@@ -397,7 +401,7 @@ class WorkingField(Canvas):
             color0 = self.itemcget(i, "fill")
             self.itemconfig(i, outline=color0)
         intersection = set()
-        all_elem = self.all_obj.keys()
+        all_elem = list(self.all_obj.keys())
         # по всем объектам на холсте (кроме участка)
         for i in all_elem.copy():
             border = self.coords(i)
@@ -405,12 +409,13 @@ class WorkingField(Canvas):
             # для круглых
             if len(border) == 4:
                 c = (0.5 * (border[0] + border[2]), 0.5 * (border[1] + border[3]))
-                r = border[0] - c[0]
+                r = c[0] - border[0]
                 for j in all_elem.copy():
                     p = self.coords(j)
                     if len(p) == 4:
                         c1 = (0.5 * (p[0] + p[2]), 0.5 * (p[1] + p[3]))
-                        if (abs(c1[0] - c[0]) < r) & (abs(c1[1] - c[1]) < r):
+                        r1 = c1[0] - p[0]
+                        if (c1[0] - c[0])**2 + (c1[1] - c[1])**2 < (r + r1)**2:
                             list_intersection.append(j)
                 # # list_intersection = list(self.find_overlapping(border[0], border[1],
                 # #                                                border[2], border[3]))
@@ -557,10 +562,7 @@ class WorkingField(Canvas):
             self.delete_select()
             self.delete(self.text_merge)
             return
-        if self.select_object is not None:
-            color = self.itemcget(self.select_object, "fill")
-            self.itemconfig(self.select_object, outline=color)
-            self.select_object = None
+        self.delete_select()
         self.select_flag = Select.distance
         self.text_distance = self.create_text(300, 10,
                                               text="Выберите точку на первом объекте для расчета расстояния",
@@ -577,7 +579,7 @@ class WorkingField(Canvas):
                         (self.distance_obj[0][1] - self.distance_obj[1][1]) ** 2)
         self.delete(self.text_distance)
         self.text_distance = self.create_text(300, 10,
-                                              text="Расстояние: " + str(distance / 10),
+                                              text="Расстояние: " + str(distance / 10) + " м",
                                               font="TimesNewRoman")
         self.line = self.create_line(*self.distance_obj)
         self.distance_obj = [None, None]
@@ -751,6 +753,7 @@ class WorkingField(Canvas):
                 self.distance_obj[1] = (event.x, event.y)
                 self.select_flag == Select.one
                 self.show_distance()
+            return
         if self.select_flag == Select.one:
             if self.select_object is not None:
                 # возвращаем к невыделению предыдущий выделенный
