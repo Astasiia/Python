@@ -400,8 +400,9 @@ class WorkingField(Canvas):
             list_intersection = []
             # для круглых
             if len(border) == 4:
-                list_intersection = list(self.find_overlapping(border[0], border[1],
-                                                               border[2], border[3]))
+                # list_intersection = list(self.find_overlapping(border[0], border[1],
+                #                                                border[2], border[3]))
+                list_intersection = []
             # для прямоугольных
             elif len(border) == 8:
                 list_intersection1 = list(self.find_overlapping(border[0], border[1],
