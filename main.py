@@ -946,7 +946,6 @@ class ElementaryObject:
 
     # функция поврота
     def rotation(self, direction):
-        print("bbb")
         # поворот на 5 градусов
         if direction == "l":
             alpha = -pi / 36
@@ -957,11 +956,9 @@ class ElementaryObject:
         # вокруг центра фигуры
         # считаем два вектора
         if x is Form.polygon:
-            print("aaa")
             point = self.canvas.coords(self.tag)
             center = (0.5 * (point[0] + point[4]), 0.5 * (point[1] + point[5]))
             new_points = new_coordinates(*center, point, alpha)
-            print(point, new_points)
             self.canvas.coords(self.tag, new_points)
             self.canvas.check_object_on_garden()
             self.canvas.check_intersection_obj()
