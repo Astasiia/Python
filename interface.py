@@ -93,7 +93,7 @@ def create_btn_obj(window):
 
 # кнопки для работы с проектом
 def create_btn_prj(window):
-    work_prj = Frame(window, width=290, height=230, bg="lightgray")
+    work_prj = Frame(window, width=290, height=280, bg="lightgray")
     work_prj.place(x=630, y=0)
     btn_exit = Button(work_prj,
                       text="Выход",
@@ -120,14 +120,20 @@ def create_btn_prj(window):
                              font=("Times New Roman", 18),
                              fg="red",
                              command=window.canvas.information)
+    btn_instruction = Button(work_prj,
+                             text="Инструкция",
+                             font=("Times New Roman", 18),
+                             fg="red",
+                             command=window.instruction)
     four_button_place([btn_exit, btn_save, btn_load, btn_picture])
     btn_list_object.place(x=20, y=160, width=250, height=50)
+    btn_instruction.place(x=20, y=230, width=250, height=50)
 
 
 # кнопки для задания участка для расположения на холсте
 def create_btn_garden(window):
-    work_garden = Frame(window, width=290, height=200, bg="lightgray")
-    work_garden.place(x=630, y=230)
+    work_garden = Frame(window, width=290, height=150, bg="lightgray")
+    work_garden.place(x=630, y=280)
     lbl_x = Label(work_garden,
                   text="X, м",
                   font=("Times New Roman", 18),
@@ -244,6 +250,6 @@ def create_info(count):
         name = key_by_value(dict_object, i)
         count_name = str(count.get(i))
         text = name + ": " + count_name + " шт."
-        canvas.create_text(100, y+5, text=text, font="TimesNewRoman")
+        canvas.create_text(100, y + 5, text=text, font="TimesNewRoman")
         dy = max(dy, 15)
         y = y + dy + 10
