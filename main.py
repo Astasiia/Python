@@ -293,10 +293,16 @@ class WorkingField(Canvas):
         if self.garden is None:
             # если нет участка, нельзя выбрать
             return
+        if self.select_flag is Select.distance:
+            self.delete(self.text_distance)
+            self.delete(self.line)
+            self.distance_obj = [None, None]
+            self.select_flag == Select.one
+            return
         if self.select_flag is Select.no_one:
-            # если процесс объединения, снимаем выделения
-            # ничего не делаем
+            # в процессе объединения снимаем выделения, ничего не делаем
             self.delete_select()
+            self.delete(self.text_merge)
             return
         # создание нового дополнительного окна для выбора нового объекта
         create_window_select(self.window, list_obj)
