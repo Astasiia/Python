@@ -525,9 +525,11 @@ class WorkingField(Canvas):
             self.list_elementary.remove(i)
         # обработка частей, являющихся составными
         compound = []
+        list_elem = list_item.copy()
         if list_comb:
             compound = self.separation_for_merge(list_item, list_comb)
         if len(list_item) < 2:
+            self.list_elementary.extend(list_elem)
             self.list_combining.extend(compound)
             return
         # добавляем составной объект
