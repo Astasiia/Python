@@ -5,6 +5,7 @@ from help_function import *
 from PIL import ImageDraw
 
 
+# класс основного окна приложения
 class UserWindow(Tk):
     def __init__(self):
         super().__init__()
@@ -21,6 +22,9 @@ class UserWindow(Tk):
         create_btn_add(self)
         create_btn_garden(self)
         # create_btn_move(self)
+
+    ##########
+    # функции для работы с проектом
 
     # создание кнопок с картинками
     # запуск основного цикла работы окна
@@ -84,13 +88,16 @@ class UserWindow(Tk):
         new_file = filedialog.asksaveasfilename(filetypes=filetypes)
         if new_file:
             f = open(new_file, 'w')
+            # запись конфигурации в файл с холста
             self.canvas.save_config(f)
             f.close()
 
+    # события при нажатии Рисунок
     def save_picture(self):
         filetypes = [("JPG", "*.jpg")]
         new_file = filedialog.asksaveasfilename(filetypes=filetypes)
         if new_file:
+            # сохранение объектов с холста картинкой
             self.canvas.save_image(new_file)
 
     # события при нажатии Загрузить
@@ -102,10 +109,18 @@ class UserWindow(Tk):
             self.canvas.download(f)
             f.close()
 
+    # события при нажатии Информация
     def instruction(self):
-        showinfo("Инструкция")
+        f = open("information.txt")
+        text = ""
+        x = f.readline()
+        while x != "\n":
+            text = text + x
+            x = f.readline()
+        showinfo("Инструкция", text)
 
 
+# класс поля для работы
 class WorkingField(Canvas):
     def __init__(self, window):
         super().__init__(window, width=600, height=400, bg="white")
@@ -140,18 +155,16 @@ class WorkingField(Canvas):
         # пересекающиеся объекты и выходящие за участок
         self.intersection = set()
         self.outside_garden = set()
+        # информационный текст для объединения и расчета расстояния
         self.text_merge = None
         self.text_distance = None
+        # хранение координат для расчета расстояния между ними
         self.distance_obj = [None, None]
+        # объект линия - какое расстояне измеряется
         self.line = None
 
-    def load_garden(self):
-        if self.garden is None:
-            return "\n"
-        coverage = key_by_value(dict_object, self.coverage)
-        point = str(self.coords(self.garden))
-        result = "G\n" + coverage + "\n" + point + "\n"
-        return result
+    ##########
+    # функции для создания объектов класса
 
     # создание элементарного объекта
     def add_elementary(self, type_obj, tag):
@@ -168,6 +181,9 @@ class WorkingField(Canvas):
         self.list_combining.append(x)
         for i in list_item:
             self.all_obj.update({i.tag: x})
+
+    ##########
+    # функции для работы с холстом
 
     # удаление объекта с поля
     def delete_obj(self):
@@ -233,12 +249,8 @@ class WorkingField(Canvas):
     # объединение элементарных в составной (после второго)
     # определение нажатия по флагу объединения
     def merge(self):
-        if self.select_flag is Select.distance:
-            self.delete(self.text_distance)
-            self.delete(self.line)
-            self.distance_obj = [None, None]
-            self.select_flag == Select.one
-            self.delete_select()
+        # проверка на процесс расчета расстояния
+        if self.check_flag_distance():
             return
         if self.select_flag == Select.one:
             # первое нажатие
@@ -250,10 +262,12 @@ class WorkingField(Canvas):
                     self.select_comb.append(self.select_object)
                 else:
                     self.select_comb.extend(x.list_tag)
+            # информационное сообщение о процессе объединения
             self.text_merge = self.create_text(300, 10,
                                                text="Выберите объекты для объединения в один",
                                                font="TimesNewRoman")
         else:
+            # удаляем сообщение
             self.delete(self.text_merge)
             # второе нажатие
             list_comb = self.select_comb.copy()
@@ -264,18 +278,10 @@ class WorkingField(Canvas):
 
     # разъединение составного объекта на элементарные
     def separation(self):
-        if self.select_flag is Select.distance:
-            self.delete(self.text_distance)
-            self.delete(self.line)
-            self.distance_obj = [None, None]
-            self.select_flag == Select.one
-            self.delete_select()
+        # проверка на процесс расчета расстояния b j,]tlbytybz
+        if self.check_flag_distance():
             return
-        if self.select_flag is Select.no_one:
-            # если процесс объединения
-            # убираем все выделения, ничего не делаем
-            self.delete_select()
-            self.delete(self.text_merge)
+        if self.check_flag_merge():
             return
         if self.select_object is None:
             # если ничего не выделенно, ничего не делаем
@@ -296,26 +302,6 @@ class WorkingField(Canvas):
         self.check_intersection_obj()
         self.error_position()
 
-    def select_new_obj(self, list_obj):
-        # выбор нового добавляемого объекта
-        if self.garden is None:
-            # если нет участка, нельзя выбрать
-            return
-        if self.select_flag is Select.distance:
-            self.delete(self.text_distance)
-            self.delete(self.line)
-            self.distance_obj = [None, None]
-            self.select_flag == Select.one
-            self.delete_select()
-            return
-        if self.select_flag is Select.no_one:
-            # в процессе объединения снимаем выделения, ничего не делаем
-            self.delete_select()
-            self.delete(self.text_merge)
-            return
-        # создание нового дополнительного окна для выбора нового объекта
-        create_window_select(self.window, list_obj)
-
     # создание по введенной информации самого участка
     def create_garden(self, in_x, in_y, in_coverage):
         if self.garden is not None:
@@ -327,6 +313,7 @@ class WorkingField(Canvas):
         y = 10 * int(in_y.get())
         x0 = 300 - int(x / 2)
         y0 = 200 - int(y / 2)
+        # расположение
         self.x = x0
         self.y = y0
         # определение покрытия
@@ -339,23 +326,30 @@ class WorkingField(Canvas):
                                           outline="black", fill=color, width=5)
         # на задний план
         self.tag_lower(self.garden)
+        # характеристика участка
         self.vertical_len = y
         self.horizontal_len = x
         self.coverage = coverage
 
+    def select_new_obj(self, list_obj):
+        # выбор нового добавляемого объекта
+        if self.garden is None:
+            # если нет участка, нельзя выбрать
+            return
+        # проверка процесса объединения и рассчета
+        if self.check_flag_distance():
+            return
+        if self.check_flag_merge():
+            return
+        # создание нового дополнительного окна для выбора нового объекта
+        create_window_select(self.window, list_obj)
+
     # движение объекта
     def move_obj(self, direction):
-        if self.select_flag is Select.distance:
-            self.delete(self.text_distance)
-            self.delete(self.line)
-            self.distance_obj = [None, None]
-            self.select_flag == Select.one
-            self.delete_select()
+        # проверка процесса объединения и рассчета
+        if self.check_flag_distance():
             return
-        if self.select_flag is Select.no_one:
-            # в процессе объединения снимаем выделения, ничего не делаем
-            self.delete_select()
-            self.delete(self.text_merge)
+        if self.check_flag_merge():
             return
         if self.select_object is None:
             # нет выделенного объекта
@@ -372,17 +366,10 @@ class WorkingField(Canvas):
 
     # поворот объекта
     def rotation_obj(self, direction):
-        if self.select_flag == Select.distance:
-            self.delete(self.text_distance)
-            self.delete(self.line)
-            self.distance_obj = [None, None]
-            self.select_flag == Select.one
-            self.delete_select()
+        # проверка процесса объединения и рассчета
+        if self.check_flag_distance():
             return
-        if self.select_flag is Select.no_one:
-            # в процессе объединения снимаем выделения, ничего не делаем
-            self.delete_select()
-            self.delete(self.text_merge)
+        if self.check_flag_merge():
             return
         if self.select_object is None:
             # нет выделенного объекта
@@ -396,6 +383,35 @@ class WorkingField(Canvas):
                     break
         else:
             x.rotation(direction)
+
+    ##########
+    # функции для работы с дополнительными функциями (расстояния, информация)
+
+    # вывод информации по объектам
+    def information(self):
+        # расчет и вывод
+        count_object = self.count_all_object()
+        create_info(count_object)
+
+    # запуск процесса расчета расстояния
+    # выбор объектов для рассчета
+    def distance(self):
+        # проверка процесса объеинения
+        if self.check_flag_merge():
+            return
+        self.delete_select()
+        self.select_flag = Select.distance
+        self.text_distance = self.create_text(300, 10,
+                                              text="Выберите точку на первом объекте для расчета расстояния",
+                                              font="TimesNewRoman")
+
+    # сбррос всех выделений и дополнительных обозначений
+    # и информационных сообщений
+    def drop(self):
+        self.delete(self.line)
+        self.delete_select()
+        self.delete(self.text_distance)
+        self.delete(self.text_merge)
 
     # проверка пересечений между объектами на участке
     def check_intersection_obj(self):
@@ -411,6 +427,8 @@ class WorkingField(Canvas):
             list_intersection = []
             # для круглых
             if len(border) == 4:
+                # определяем по центру и радиусу
+                # только круглые с круглыми
                 c = (0.5 * (border[0] + border[2]), 0.5 * (border[1] + border[3]))
                 r = c[0] - border[0]
                 for j in all_elem.copy():
@@ -420,9 +438,6 @@ class WorkingField(Canvas):
                         r1 = c1[0] - p[0]
                         if (c1[0] - c[0])**2 + (c1[1] - c[1])**2 < (r + r1)**2:
                             list_intersection.append(j)
-                # # list_intersection = list(self.find_overlapping(border[0], border[1],
-                # #                                                border[2], border[3]))
-                # list_intersection = []
             # для прямоугольных
             elif len(border) == 8:
                 list_intersection1 = list(self.find_overlapping(border[0], border[1],
@@ -431,7 +446,7 @@ class WorkingField(Canvas):
                                                                 border[6], border[7]))
                 list_intersection = [value for value in list_intersection1
                                      if value in list_intersection2]
-            # удаляем из списка пересечений участок
+            # удаляем из списка пересечений участок и линию расстояния
             if list_intersection.count(self.garden) != 0:
                 list_intersection.remove(self.garden)
             if (self.line is not None) & (self.line in list_intersection):
@@ -440,14 +455,6 @@ class WorkingField(Canvas):
             if len(list_intersection) == 1:
                 list_intersection.clear()
                 continue
-            # x = self.all_obj.get(i)
-            # # для составного объекта исключаем пересечение уже объединенных объектов
-            # if x is not None:
-            #     for j in list_intersection.copy():
-            #         if (self.all_obj.get(j) == x) & \
-            #                 (i not in self.intersection) & \
-            #                 (j not in self.intersection):
-            #             list_intersection.remove(j)
             # обновляем список новых пересечений
             intersection.update(list_intersection)
             list_intersection.clear()
@@ -487,107 +494,8 @@ class WorkingField(Canvas):
         else:
             self.return_selection(self.select_object, error)
 
-    # при отсутсвии ошибок, возврат выделения
-    def return_selection(self, obj, error):
-        x = self.all_obj.get(obj)
-        if x is None:
-            if obj not in error:
-                self.itemconfig(obj, outline="green2")
-        else:
-            for i in x.list_tag:
-                if i not in error:
-                    self.itemconfig(i, outline="green2")
-
-    # разъединение составного на элементраные для нового объединения
-    def separation_for_merge(self, item, comb):
-        list_comb = []
-        while comb:
-            x = comb.pop()
-            elem = self.all_obj.get(x)
-            self.list_combining.remove(elem)
-            list_comb.append(elem)
-            for j in elem.list_tag:
-                if j != x:
-                    comb.remove(j)
-            for j in elem.items:
-                item.append(j)
-        return list_comb
-
-    # объединение объектов в составной
-    def combining_obj(self, list_comb):
-        list_item = []
-        # обработка частей, являющихся элементарными
-        for i in self.list_elementary:
-            if i.tag in list_comb:
-                list_item.append(i)
-                list_comb.remove(i.tag)
-        for i in list_item:
-            self.list_elementary.remove(i)
-        # обработка частей, являющихся составными
-        compound = []
-        list_elem = list_item.copy()
-        if list_comb:
-            compound = self.separation_for_merge(list_item, list_comb)
-        if len(list_item) < 2:
-            self.list_elementary.extend(list_elem)
-            self.list_combining.extend(compound)
-            return
-        # добавляем составной объект
-        self.add_compound(list_item)
-
-    # разъединение объектов
-    def separation_obj(self, obj):
-        x = self.all_obj.get(obj)
-        # обновление списков объектов и словаря
-        self.list_combining.remove(x)
-        self.list_elementary.extend(x.items)
-        for j in x.items:
-            self.all_obj.update({j.tag: None})
-
-    def count_all_object(self):
-        count_object = {}
-        for i in about_object.keys():
-            count_object.update({i: 0})
-        for i in self.list_elementary:
-            count = count_object.get(i.type)
-            count_object.update({i.type: count + 1})
-        for i in self.list_combining:
-            for j in i.items:
-                count = count_object.get(j.type)
-                count_object.update({j.type: count + 1})
-        return count_object
-
-    def information(self):
-        count_object = self.count_all_object()
-        create_info(count_object)
-
-    def distance(self):
-        if self.select_flag is Select.no_one:
-            # в процессе объединения снимаем выделения, ничего не делаем
-            self.delete_select()
-            self.delete(self.text_merge)
-            return
-        self.delete_select()
-        self.select_flag = Select.distance
-        self.text_distance = self.create_text(300, 10,
-                                              text="Выберите точку на первом объекте для расчета расстояния",
-                                              font="TimesNewRoman")
-
-    def drop(self):
-        self.delete(self.line)
-        self.delete_select()
-        self.delete(self.text_distance)
-
-    def show_distance(self):
-        self.delete(self.text_distance)
-        distance = sqrt((self.distance_obj[0][0] - self.distance_obj[1][0]) ** 2 +
-                        (self.distance_obj[0][1] - self.distance_obj[1][1]) ** 2)
-        self.delete(self.text_distance)
-        self.text_distance = self.create_text(300, 10,
-                                              text="Расстояние: " + str(distance / 10) + " м",
-                                              font="TimesNewRoman")
-        self.line = self.create_line(*self.distance_obj)
-        self.distance_obj = [None, None]
+    ##########
+    # функции для работы с проектом
 
     # сохранение конфигурации в файл
     def save_config(self, file):
@@ -601,6 +509,7 @@ class WorkingField(Canvas):
             file.write(i.load_option())
         file.write("\n")
 
+    # загрузка конфигурации из файла
     def download(self, file):
         flag = None
         self.clear()
@@ -640,36 +549,12 @@ class WorkingField(Canvas):
                 list_items.append(obj)
             elif flag is None:
                 return
+        # отображение всех нарушений
         self.check_intersection_obj()
         self.check_object_on_garden()
         self.error_position()
 
-    def create_load_garden(self, coverage, point):
-        self.x = point[0] + 5
-        self.y = point[1] + 5
-        color = about_object.get(coverage)[COLOR]
-        self.garden = self.create_polygon(point, outline="black", fill=color, width=5)
-        self.tag_lower(self.garden)
-        self.vertical_len = point[6] - point[0] - 10
-        self.horizontal_len = point[7] - point[1] - 10
-        self.coverage = coverage
-
-    def create_load_elementary(self, type_obj, point):
-        lst = about_object.get(type_obj)
-        if lst[FORM] is Form.oval:
-            # круглый
-            a = self.create_oval(point, fill=lst[COLOR], outline=lst[COLOR],
-                                 activeoutline="cyan", width=2)
-        else:
-            # прямоугольный
-            a = self.create_polygon(point, fill=lst[COLOR], outline=lst[COLOR],
-                                    activeoutline="cyan", width=2)
-        # связь с функцией при нажатии
-        self.tag_bind(a, '<Button-1>', lambda event: self.new_select(a, event))
-        # добавление элементарного объекта
-        self.add_elementary(type_obj, a)
-        return a
-
+    # сохранение изображения с холста
     def save_image(self, file):
         if self.garden is None:
             return
@@ -688,6 +573,121 @@ class WorkingField(Canvas):
             else:
                 draw.ellipse(point, color0)
         image.save(file)
+
+    ##########
+    # вспомогательные функции, функции для работы с объектами
+    # функции для работы с холстом
+
+    # при отсутсвии ошибок, возврат выделения
+    def return_selection(self, obj, error):
+        x = self.all_obj.get(obj)
+        if x is None:
+            if obj not in error:
+                self.itemconfig(obj, outline="green2")
+        else:
+            for i in x.list_tag:
+                if i not in error:
+                    self.itemconfig(i, outline="green2")
+
+    # объединение объектов в составной
+    def combining_obj(self, list_comb):
+        list_item = []
+        # обработка частей, являющихся элементарными
+        for i in self.list_elementary:
+            if i.tag in list_comb:
+                list_item.append(i)
+                list_comb.remove(i.tag)
+        for i in list_item:
+            self.list_elementary.remove(i)
+        # обработка частей, являющихся составными
+        compound = []
+        list_elem = list_item.copy()
+        if list_comb:
+            compound = self.separation_for_merge(list_item, list_comb)
+        if len(list_item) < 2:
+            self.list_elementary.extend(list_elem)
+            self.list_combining.extend(compound)
+            return
+        # добавляем составной объект
+        self.add_compound(list_item)
+
+    # разъединение составного на элементраные для нового объединения
+    def separation_for_merge(self, item, comb):
+        list_comb = []
+        while comb:
+            x = comb.pop()
+            elem = self.all_obj.get(x)
+            self.list_combining.remove(elem)
+            list_comb.append(elem)
+            for j in elem.list_tag:
+                if j != x:
+                    comb.remove(j)
+            for j in elem.items:
+                item.append(j)
+        return list_comb
+
+    # разъединение объектов
+    def separation_obj(self, obj):
+        x = self.all_obj.get(obj)
+        # обновление списков объектов и словаря
+        self.list_combining.remove(x)
+        self.list_elementary.extend(x.items)
+        for j in x.items:
+            self.all_obj.update({j.tag: None})
+
+    # расчет количества объектов различного типа
+    def count_all_object(self):
+        count_object = {}
+        for i in about_object.keys():
+            count_object.update({i: 0})
+        for i in self.list_elementary:
+            count = count_object.get(i.type)
+            count_object.update({i.type: count + 1})
+        for i in self.list_combining:
+            for j in i.items:
+                count = count_object.get(j.type)
+                count_object.update({j.type: count + 1})
+        return count_object
+
+    # расчет расстояния и вывод сообщения на холст
+    def show_distance(self):
+        self.delete(self.text_distance)
+        distance = sqrt((self.distance_obj[0][0] - self.distance_obj[1][0]) ** 2 +
+                        (self.distance_obj[0][1] - self.distance_obj[1][1]) ** 2)
+        self.delete(self.text_distance)
+        self.text_distance = self.create_text(300, 10,
+                                              text="Расстояние: " + str(distance / 10) + " м",
+                                              font="TimesNewRoman")
+        self.line = self.create_line(*self.distance_obj)
+        self.distance_obj = [None, None]
+
+    # создание участка по информации из файла
+    def create_load_garden(self, coverage, point):
+        self.x = point[0] + 5
+        self.y = point[1] + 5
+        color = about_object.get(coverage)[COLOR]
+        self.garden = self.create_polygon(point, outline="black", fill=color, width=5)
+        self.tag_lower(self.garden)
+        self.vertical_len = point[6] - point[0] - 10
+        self.horizontal_len = point[7] - point[1] - 10
+        self.coverage = coverage
+
+    # создание элементов по информации из файла
+    def create_load_elementary(self, type_obj, point):
+        lst = about_object.get(type_obj)
+        if lst[FORM] is Form.oval:
+            # круглый
+            a = self.create_oval(point, fill=lst[COLOR], outline=lst[COLOR],
+                                 activeoutline="cyan", width=2)
+        else:
+            # прямоугольный
+            a = self.create_polygon(point, fill=lst[COLOR], outline=lst[COLOR],
+                                    activeoutline="cyan", width=2)
+        # связь с функцией при нажатии
+        self.tag_bind(a, '<Button-1>', lambda event: self.new_select(a, event))
+        # добавление элементарного объекта
+        self.add_elementary(type_obj, a)
+        return a
 
     # изменение конфигурации составного объекта (цвета)
     def item_config_all(self, obj, color):
@@ -749,7 +749,9 @@ class WorkingField(Canvas):
 
     # новое выделение на холсте
     def new_select(self, obj, event):
+        # процесс расчета расстояния
         if self.select_flag == Select.distance:
+            # добавление первых и вторых координат для расчета
             if self.distance_obj[0] is None:
                 self.distance_obj[0] = (event.x, event.y)
                 self.delete(self.text_distance)
@@ -759,8 +761,10 @@ class WorkingField(Canvas):
             else:
                 self.distance_obj[1] = (event.x, event.y)
                 self.select_flag == Select.one
+                # запуск расчета после второй точки
                 self.show_distance()
             return
+        # не объединение
         if self.select_flag == Select.one:
             if self.select_object is not None:
                 # возвращаем к невыделению предыдущий выделенный
@@ -811,7 +815,40 @@ class WorkingField(Canvas):
             self.select_comb.append(obj)
             self.select_object = obj
 
+    # сброс процесса расчета расстояния
+    def check_flag_distance(self):
+        if self.select_flag is Select.distance:
+            # если процесс расчета расстояния
+            # удаляем всю информацию по нему
+            self.delete(self.text_distance)
+            self.delete(self.line)
+            self.distance_obj = [None, None]
+            self.select_flag == Select.one
+            self.delete_select()
+            return True
+        return False
 
+    # сброс процесса объединени
+    def check_flag_merge(self):
+        if self.select_flag is Select.no_one:
+            # если процесс объединения
+            # убираем все выделения, ничего не делаем
+            self.delete_select()
+            self.delete(self.text_merge)
+            return True
+        return False
+
+    # загрузка информации об участке в файл
+    def load_garden(self):
+        if self.garden is None:
+            return "\n"
+        coverage = key_by_value(dict_object, self.coverage)
+        point = str(self.coords(self.garden))
+        result = "G\n" + coverage + "\n" + point + "\n"
+        return result
+
+
+# класс составной объект
 class CompoundObject:
     def __init__(self, list_item, canvas):
         # холст
@@ -871,14 +908,12 @@ class CompoundObject:
             result = result + i.load_option()
         return result
 
-    def get_size(self):
-        pass
-
     def __del__(self):
         self.list_tag.clear()
         self.items.clear()
 
 
+# класс элементарный объект
 class ElementaryObject:
     def __init__(self, type_obj, tag, canvas):
         self.canvas = canvas
@@ -931,9 +966,6 @@ class ElementaryObject:
             self.canvas.check_object_on_garden()
             self.canvas.check_intersection_obj()
             self.canvas.error_position()
-
-    def get_size(self):
-        pass
 
 
 if __name__ == "__main__":

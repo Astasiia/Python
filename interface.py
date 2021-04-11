@@ -221,6 +221,7 @@ def create_window_select(window, list_obj):
     btn_no.place(x=280, y=180, width=120, height=50, anchor="se")
 
 
+# создание окна с информацией об объектах
 def create_info(count):
     new_window = Toplevel()
     new_window.grab_set()

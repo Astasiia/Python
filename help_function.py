@@ -25,6 +25,7 @@ def key_by_value(dict, value):
             return i[0]
 
 
+# кортеж точек из списка координат
 def tuple_from_list(list_point):
     result = []
     for i in range(0, len(list_point), 2):
@@ -32,6 +33,7 @@ def tuple_from_list(list_point):
     return tuple(result)
 
 
+# расчет новых координат по старым и сдвигу
 def new_point(point, x, y):
     point0 = []
     for i in point:
