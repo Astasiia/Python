@@ -220,6 +220,10 @@ class WorkingField(Canvas):
         self.intersection.clear()
         self.outside_garden.clear()
         self.garden = None
+        self.distance_obj = [None, None]
+        self.text_merge = None
+        self.text_distance = None
+        self.line = None
 
     # объединение объектов в два этапа
     # выделение нужных (после первого нажатия)
@@ -395,14 +399,22 @@ class WorkingField(Canvas):
         intersection = set()
         all_elem = self.all_obj.keys()
         # по всем объектам на холсте (кроме участка)
-        for i in all_elem:
+        for i in all_elem.copy():
             border = self.coords(i)
             list_intersection = []
             # для круглых
             if len(border) == 4:
-                # list_intersection = list(self.find_overlapping(border[0], border[1],
-                #                                                border[2], border[3]))
-                list_intersection = []
+                c = (0.5 * (border[0] + border[2]), 0.5 * (border[1] + border[3]))
+                r = border[0] - c[0]
+                for j in all_elem.copy():
+                    p = self.coords(j)
+                    if len(p) == 4:
+                        c1 = (0.5 * (p[0] + p[2]), 0.5 * (p[1] + p[3]))
+                        if (abs(c1[0] - c[0]) < r) & (abs(c1[1] - c[1]) < r):
+                            list_intersection.append(j)
+                # # list_intersection = list(self.find_overlapping(border[0], border[1],
+                # #                                                border[2], border[3]))
+                # list_intersection = []
             # для прямоугольных
             elif len(border) == 8:
                 list_intersection1 = list(self.find_overlapping(border[0], border[1],
@@ -480,15 +492,18 @@ class WorkingField(Canvas):
 
     # разъединение составного на элементраные для нового объединения
     def separation_for_merge(self, item, comb):
+        list_comb = []
         while comb:
             x = comb.pop()
             elem = self.all_obj.get(x)
             self.list_combining.remove(elem)
+            list_comb.append(elem)
             for j in elem.list_tag:
                 if j != x:
                     comb.remove(j)
             for j in elem.items:
                 item.append(j)
+        return list_comb
 
     # объединение объектов в составной
     def combining_obj(self, list_comb):
@@ -501,9 +516,11 @@ class WorkingField(Canvas):
         for i in list_item:
             self.list_elementary.remove(i)
         # обработка частей, являющихся составными
+        compound = []
         if list_comb:
-            self.separation_for_merge(list_item, list_comb)
-        if list_item is []:
+            compound = self.separation_for_merge(list_item, list_comb)
+        if len(list_item) < 2:
+            self.list_combining.extend(compound)
             return
         # добавляем составной объект
         self.add_compound(list_item)
@@ -614,6 +631,9 @@ class WorkingField(Canvas):
                 point = eval(file.readline())
                 obj = self.create_load_elementary(type_obj, point)
                 list_items.append(obj)
+        self.check_intersection_obj()
+        self.check_object_on_garden()
+        self.error_position()
 
     def create_load_garden(self, coverage, point):
         self.x = point[0] + 5
