@@ -808,8 +808,8 @@ class CompoundObject:
                 # для прямоугольника считаем два новых вектора
                 # для точек одной диагонали
                 point = self.canvas.coords(i.tag)
-                new_point = new_coordinates(*center, point, alpha)
-                self.canvas.coords(self.tag, new_point)
+                new_points = new_coordinates(*center, point, alpha)
+                self.canvas.coords(i.tag, new_points)
             elif x is Form.oval:
                 # для круга считаем вектор – центр окружности
                 point = self.canvas.coords(i.tag)
@@ -874,6 +874,7 @@ class ElementaryObject:
 
     # функция поврота
     def rotation(self, direction):
+        print("bbb")
         # поворот на 5 градусов
         if direction == "l":
             alpha = -pi / 36
@@ -884,10 +885,12 @@ class ElementaryObject:
         # вокруг центра фигуры
         # считаем два вектора
         if x is Form.polygon:
+            print("aaa")
             point = self.canvas.coords(self.tag)
             center = (0.5 * (point[0] + point[4]), 0.5 * (point[1] + point[5]))
-            new_point = new_coordinates(*center, point, alpha)
-            self.canvas.coords(self.tag, new_point)
+            new_points = new_coordinates(*center, point, alpha)
+            print(point, new_points)
+            self.canvas.coords(self.tag, new_points)
             self.canvas.check_object_on_garden()
             self.canvas.check_intersection_obj()
             self.canvas.error_position()

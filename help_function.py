@@ -14,6 +14,7 @@ def new_coordinates(cx, cy, points, alpha):
     for i in range(0, len(points), 2):
         x0, y0 = vector_rotation(cx, cy, points[i], points[i+1], alpha)
         new_points.extend([x0, y0])
+    return new_points
 
 
 # получение ключа по значению в словаре
