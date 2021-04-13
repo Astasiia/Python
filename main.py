@@ -666,10 +666,10 @@ class WorkingField(Canvas):
         self.delete(self.text_distance)
         distance = sqrt((self.distance_obj[0][0] - self.distance_obj[1][0]) ** 2 +
                         (self.distance_obj[0][1] - self.distance_obj[1][1]) ** 2)
-        self.delete(self.text_distance)
         self.text_distance = self.create_text(300, 10,
                                               text="Расстояние: " + str(distance / 10) + " м",
                                               font="TimesNewRoman")
+        self.delete(self.line)
         self.line = self.create_line(*self.distance_obj)
         self.distance_obj = [None, None]
 
@@ -762,7 +762,11 @@ class WorkingField(Canvas):
     # новое выделение на холсте
     def new_select(self, obj, event):
         # процесс расчета расстояния
-        if self.select_flag == Select.distance:
+        if self.select_flag is Select.distance:
+            if self.line is not None:
+                self.check_flag_distance()
+                self.new_select(obj, event)
+                return
             # добавление первых и вторых координат для расчета
             if self.distance_obj[0] is None:
                 self.distance_obj[0] = (event.x, event.y)
@@ -777,7 +781,7 @@ class WorkingField(Canvas):
                 self.show_distance()
             return
         # не объединение
-        if self.select_flag == Select.one:
+        if self.select_flag is Select.one:
             if self.select_object is not None:
                 # возвращаем к невыделению предыдущий выделенный
                 x = self.all_obj.get(self.select_object)
@@ -834,6 +838,8 @@ class WorkingField(Canvas):
             # удаляем всю информацию по нему
             self.delete(self.text_distance)
             self.delete(self.line)
+            self.text_distance = None
+            self.line = None
             self.distance_obj = [None, None]
             self.select_flag == Select.one
             self.delete_select()
