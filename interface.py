@@ -13,11 +13,12 @@ def load_image(name, size):
 
 
 # расположение на фрейме 4 кнопок
-def four_button_place(lst_btn):
-    lst_btn[0].place(x=20, y=20, width=120, height=50)
-    lst_btn[1].place(x=20, y=90, width=120, height=50)
-    lst_btn[2].place(x=150, y=20, width=120, height=50)
-    lst_btn[3].place(x=150, y=90, width=120, height=50)
+def four_button_place(lst_btn, lbl):
+    lbl.place(x=20, y=20)
+    lst_btn[0].place(x=20, y=60, width=120, height=50)
+    lst_btn[1].place(x=20, y=130, width=120, height=50)
+    lst_btn[2].place(x=150, y=60, width=120, height=50)
+    lst_btn[3].place(x=150, y=130, width=120, height=50)
 
 
 # функции для создания виджетов для их расположения на основном окне
@@ -66,8 +67,13 @@ def create_btn_move(window):
 
 # создание кнопок для работы с объектами
 def create_btn_obj(window):
-    work_obj = Frame(window, width=290, height=160, bg="lightgrey")
-    work_obj.place(x=0, y=430)
+    work_obj = Frame(window, width=290, height=200, bg="lightyellow",
+                     bd=5, relief=RIDGE)
+    work_obj.place(x=0, y=550)
+    lbl = Label(work_obj,
+                text="Управление объектами холста",
+                font=("Times New Roman", 18),
+                bg="lightyellow")
     btn_merge = Button(work_obj,
                        text="Объединить",
                        font=("Times New Roman", 18),
@@ -88,13 +94,18 @@ def create_btn_obj(window):
                        font=("Times New Roman", 18),
                        fg="blue",
                        command=window.canvas.clear)
-    four_button_place([btn_merge, btn_split, btn_delete, btn_clear])
+    four_button_place([btn_merge, btn_split, btn_delete, btn_clear], lbl)
 
 
 # кнопки для работы с проектом
 def create_btn_prj(window):
-    work_prj = Frame(window, width=290, height=280, bg="lightgray")
-    work_prj.place(x=630, y=0)
+    work_prj = Frame(window, width=290, height=340, bg="lightyellow",
+                     bd=5, relief=RIDGE)
+    work_prj.place(x=700, y=0)
+    lbl = Label(work_prj,
+                text="Управление проектом",
+                font=("Times New Roman", 18),
+                bg="lightyellow")
     btn_exit = Button(work_prj,
                       text="Выход",
                       font=("Times New Roman", 18),
@@ -125,27 +136,32 @@ def create_btn_prj(window):
                              font=("Times New Roman", 18),
                              fg="red",
                              command=window.instruction)
-    four_button_place([btn_exit, btn_save, btn_load, btn_picture])
-    btn_list_object.place(x=20, y=160, width=250, height=50)
-    btn_instruction.place(x=20, y=230, width=250, height=50)
+    four_button_place([btn_exit, btn_save, btn_load, btn_picture], lbl)
+    btn_list_object.place(x=20, y=200, width=250, height=50)
+    btn_instruction.place(x=20, y=270, width=250, height=50)
 
 
 # кнопки для задания участка для расположения на холсте
 def create_btn_garden(window):
-    work_garden = Frame(window, width=290, height=150, bg="lightgray")
-    work_garden.place(x=630, y=280)
+    work_garden = Frame(window, width=290, height=210, bg="lightyellow",
+                        bd=5, relief=RIDGE)
+    work_garden.place(x=700, y=340)
+    lbl = Label(work_garden,
+                text="Задание участка",
+                font=("Times New Roman", 18),
+                bg="lightyellow")
     lbl_x = Label(work_garden,
                   text="X, м",
                   font=("Times New Roman", 18),
-                  bg="lightgray")
+                  bg="lightyellow")
     lbl_y = Label(work_garden,
                   text="Y, м",
                   font=("Times New Roman", 18),
-                  bg="lightgray")
+                  bg="lightyellow")
     lbl_coverage = Label(work_garden,
                          text="Покрытие",
                          font=("Times New Roman", 18),
-                         bg="lightgray")
+                         bg="lightyellow")
     btn_garden = Button(work_garden,
                         text="Создать",
                         font=("Times New Roman", 18))
@@ -153,25 +169,31 @@ def create_btn_garden(window):
     var_x.set(30)
     var_y = IntVar()
     var_y.set(20)
-    input_x = Spinbox(work_garden, from_=0, to=50, textvariable=var_x)
-    input_y = Spinbox(work_garden, from_=0, to=30, textvariable=var_y)
+    input_x = Spinbox(work_garden, from_=0, to=60, textvariable=var_x)
+    input_y = Spinbox(work_garden, from_=0, to=45, textvariable=var_y)
     input_coverage = Combobox(work_garden)
     input_coverage["values"] = list_coverage
     input_coverage.current(0)
-    lbl_coverage.place(x=20, y=20)
-    input_coverage.place(x=110, y=20, width=140)
+    lbl.place(x=20, y=20)
+    lbl_coverage.place(x=20, y=100)
+    input_coverage.place(x=110, y=100, width=140)
     lbl_x.place(x=20, y=60)
     input_x.place(x=70, y=60, width=60)
-    lbl_y.place(x=130, y=60)
+    lbl_y.place(x=140, y=60)
     input_y.place(x=190, y=60, width=60)
-    btn_garden.place(x=80, y=100, width=120, height=50)
+    btn_garden.place(x=80, y=140, width=120, height=50)
     btn_garden['command'] = lambda: window.canvas.create_garden(input_x, input_y, input_coverage)
 
 
 # кнопки добавления новых объектов на холст
 def create_btn_add(window):
-    work_add = Frame(window, width=290, height=160, bg="lightgray")
-    work_add.place(x=630, y=430)
+    work_add = Frame(window, width=290, height=200, bg="lightyellow",
+                     bd=5, relief=RIDGE)
+    work_add.place(x=700, y=550)
+    lbl = Label(work_add,
+                text="Добавление нового объекта",
+                font=("Times New Roman", 18),
+                bg="lightyellow")
     btn_plant = Button(work_add,
                        text="Растение",
                        font=("Times New Roman", 18),
@@ -192,7 +214,30 @@ def create_btn_add(window):
                            font=("Times New Roman", 18),
                            fg="green",
                            command=lambda: window.canvas.select_new_obj(list_furniture))
-    four_button_place([btn_plant, btn_coverage, btn_build, btn_furniture])
+    four_button_place([btn_plant, btn_coverage, btn_build, btn_furniture], lbl)
+
+
+def create_btn_function(window):
+    function = Frame(window, width=160, height=200, bg="lightyellow",
+                     bd=5, relief=RIDGE)
+    function.place(x=540, y=550)
+    lbl = Label(function,
+                text="Функции",
+                font=("Times New Roman", 18),
+                bg="lightyellow")
+    btn_distance = Button(function,
+                          text="Расстояние",
+                          font=("Times New Roman", 18),
+                          fg="black",
+                          command=window.canvas.distance)
+    btn_drop = Button(function,
+                      text="Отмена",
+                      font=("Times New Roman", 18),
+                      fg="black",
+                      command=window.canvas.drop)
+    lbl.place(x=20, y=20)
+    btn_distance.place(x=20, y=60, width=120, height=50)
+    btn_drop.place(x=20, y=130, width=120, height=50)
 
 
 # создание нового окна для выбора добавляемого объекта

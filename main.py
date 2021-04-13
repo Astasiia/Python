@@ -3,6 +3,7 @@ from tkinter import filedialog
 from interface import *
 from help_function import *
 from PIL import ImageDraw
+from shapely.geometry import Polygon
 
 
 # класс основного окна приложения
@@ -10,8 +11,8 @@ class UserWindow(Tk):
     def __init__(self):
         super().__init__()
         self.title("Создай свой участок")
-        self.geometry('920x600')
-        self["bg"] = "lightgray"
+        self.geometry('1000x760')
+        self["bg"] = "gray90"
         # основное поле для работы (на котором все рисуется)
         self.canvas = WorkingField(self)
 
@@ -21,6 +22,7 @@ class UserWindow(Tk):
         create_btn_prj(self)
         create_btn_add(self)
         create_btn_garden(self)
+        create_btn_function(self)
         # create_btn_move(self)
 
     ##########
@@ -30,8 +32,13 @@ class UserWindow(Tk):
     # запуск основного цикла работы окна
     def start(self):
         self.create_button()
-        work_move_obj = Frame(self, width=340, height=160, bg="lightgray")
-        work_move_obj.place(x=290, y=430)
+        work_move_obj = Frame(self, width=250, height=200, bg="lightyellow",
+                              bd=5, relief=RIDGE)
+        work_move_obj.place(x=290, y=550)
+        lbl = Label(work_move_obj,
+                    text="Движение объектов холста",
+                    font=("Times New Roman", 18),
+                    bg="lightyellow")
         image_r = load_image("right.png", 35)
         image_r = ImageTk.PhotoImage(image_r)
         image_l = load_image("left.png", 35)
@@ -56,24 +63,13 @@ class UserWindow(Tk):
                                command=lambda: self.canvas.rotation_obj("l"))
         btn_right_turn = Button(work_move_obj, width=50, height=50, image=image_r_t,
                                 command=lambda: self.canvas.rotation_obj("r"))
-        btn_distance = Button(work_move_obj,
-                              text="Расстояние",
-                              font=("Times New Roman", 18),
-                              fg="black",
-                              command=self.canvas.distance)
-        btn_drop = Button(work_move_obj,
-                          text="Сброс",
-                          font=("Times New Roman", 18),
-                          fg="black",
-                          command=self.canvas.drop)
-        btn_left.place(x=20, y=60)
-        btn_right.place(x=100, y=60)
-        btn_up.place(x=60, y=20)
-        btn_down.place(x=60, y=100)
-        btn_left_turn.place(x=155, y=20)
-        btn_right_turn.place(x=155, y=90)
-        btn_distance.place(x=225, y=20, width=95, height=50)
-        btn_drop.place(x=225, y=90, width=95, height=50)
+        lbl.place(x=20, y=20)
+        btn_left.place(x=20, y=100)
+        btn_right.place(x=100, y=100)
+        btn_up.place(x=60, y=60)
+        btn_down.place(x=60, y=140)
+        btn_left_turn.place(x=170, y=60)
+        btn_right_turn.place(x=170, y=130)
         self.mainloop()
 
     # события при нажатии Выход
@@ -123,7 +119,7 @@ class UserWindow(Tk):
 # класс поля для работы
 class WorkingField(Canvas):
     def __init__(self, window):
-        super().__init__(window, width=600, height=400, bg="white")
+        super().__init__(window, width=650, height=500, bg="white")
         self.place(x=20, y=20)
         # объект участка на холсте
         self.garden = None
@@ -187,11 +183,11 @@ class WorkingField(Canvas):
 
     # удаление объекта с поля
     def delete_obj(self):
-        if self.select_flag is Select.no_one:
-            # при процессе объединения
-            # все выделения исчезнут, ничего не удалится
-            self.delete_select()
-            self.delete(self.text_merge)
+        if self.garden is None:
+            return
+        if self.check_flag_merge():
+            return
+        if self.check_flag_distance():
             return
         obj = self.select_object
         self.select_object = None
@@ -249,6 +245,8 @@ class WorkingField(Canvas):
     # объединение элементарных в составной (после второго)
     # определение нажатия по флагу объединения
     def merge(self):
+        if self.garden is None:
+            return
         # проверка на процесс расчета расстояния
         if self.check_flag_distance():
             return
@@ -278,7 +276,9 @@ class WorkingField(Canvas):
 
     # разъединение составного объекта на элементарные
     def separation(self):
-        # проверка на процесс расчета расстояния b j,]tlbytybz
+        if self.garden is None:
+            return
+        # проверка на процесс расчета расстояния и объединения
         if self.check_flag_distance():
             return
         if self.check_flag_merge():
@@ -311,8 +311,8 @@ class WorkingField(Canvas):
         # рассчет координат (для расположения в центре)
         x = 10 * int(in_x.get())
         y = 10 * int(in_y.get())
-        x0 = 300 - int(x / 2)
-        y0 = 200 - int(y / 2)
+        x0 = 325 - int(x / 2)
+        y0 = 250 - int(y / 2)
         # расположение
         self.x = x0
         self.y = y0
@@ -346,6 +346,8 @@ class WorkingField(Canvas):
 
     # движение объекта
     def move_obj(self, direction):
+        if self.garden is None:
+            return
         # проверка процесса объединения и рассчета
         if self.check_flag_distance():
             return
@@ -366,6 +368,8 @@ class WorkingField(Canvas):
 
     # поворот объекта
     def rotation_obj(self, direction):
+        if self.garden is None:
+            return
         # проверка процесса объединения и рассчета
         if self.check_flag_distance():
             return
@@ -397,6 +401,8 @@ class WorkingField(Canvas):
     # выбор объектов для рассчета
     def distance(self):
         # проверка процесса объеинения
+        if self.garden is None:
+            return
         if self.check_flag_merge():
             return
         self.delete_select()
@@ -408,6 +414,8 @@ class WorkingField(Canvas):
     # сбррос всех выделений и дополнительных обозначений
     # и информационных сообщений
     def drop(self):
+        if self.garden is None:
+            return
         self.delete(self.line)
         self.delete_select()
         self.delete(self.text_distance)
@@ -436,16 +444,20 @@ class WorkingField(Canvas):
                     if len(p) == 4:
                         c1 = (0.5 * (p[0] + p[2]), 0.5 * (p[1] + p[3]))
                         r1 = c1[0] - p[0]
-                        if (c1[0] - c[0])**2 + (c1[1] - c[1])**2 < (r + r1)**2:
+                        if (c1[0] - c[0]) ** 2 + (c1[1] - c[1]) ** 2 < (r + r1) ** 2:
                             list_intersection.append(j)
             # для прямоугольных
             elif len(border) == 8:
-                list_intersection1 = list(self.find_overlapping(border[0], border[1],
-                                                                border[4], border[5]))
-                list_intersection2 = list(self.find_overlapping(border[2], border[3],
-                                                                border[6], border[7]))
-                list_intersection = [value for value in list_intersection1
-                                     if value in list_intersection2]
+                for j in all_elem.copy():
+                    p = self.coords(j)
+                    if len(p) == 8:
+                        point = p
+                    elif len(p) == 4:
+                        point = polygon_for_circle(p)
+                    p1 = Polygon(tuple_from_list(border))
+                    p2 = Polygon(tuple_from_list(point))
+                    if p1.intersects(p2):
+                        list_intersection.append(j)
             # удаляем из списка пересечений участок и линию расстояния
             if list_intersection.count(self.garden) != 0:
                 list_intersection.remove(self.garden)

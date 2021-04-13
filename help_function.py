@@ -40,3 +40,18 @@ def new_point(point, x, y):
         point0.append(i[0] + x)
         point0.append(i[1] + y)
     return point0
+
+
+# многоугольник для круга
+def polygon_for_circle(point):
+    (cx, cy) = (0.5 * (point[0] + point[2]), 0.5 * (point[1] + point[3]))
+    r = 0.5 * abs(point[0] - point[2])
+    result = [cx - r, cy,
+              cx - r / sqrt(2), cy - r / sqrt(2),
+              cx, cy - r,
+              cx + r / sqrt(2), cy - r / sqrt(2),
+              cx + r, cy,
+              cx + r / sqrt(2), cy + r / sqrt(2),
+              cx, cy + r,
+              cx - r / sqrt(2), cy + r / sqrt(2)]
+    return result
